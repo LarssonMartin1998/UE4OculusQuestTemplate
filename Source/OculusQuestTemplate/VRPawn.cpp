@@ -9,11 +9,17 @@ AVRPawn::AVRPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	BaseEyeHeight = 0.0f;
+	AutoPossessAI = EAutoPossessAI::Disabled;
+	AutoPossessPlayer = EAutoReceiveInput::Player0;
+	AIControllerClass = nullptr;
+
+	bIsSeatedVR = true;
+	SeatedHeightOffset = 75.0f;
+
 	if (CreateVRComponents())
 	{
-		BaseEyeHeight = 0.0f;
-		bIsSeatedVR = true;
-		SeatedHeightOffset = 75.0f;
+		
 	}
 
 	if (CreateDefaultComponents())
