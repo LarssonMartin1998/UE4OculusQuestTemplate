@@ -19,7 +19,8 @@ AVRPawn::AVRPawn()
 
 	if (CreateVRComponents())
 	{
-		
+		VRCamera->SetProjectionMode(ECameraProjectionMode::Perspective);
+		VRCamera->SetFieldOfView(90.0f);
 	}
 
 	if (CreateDefaultComponents())
