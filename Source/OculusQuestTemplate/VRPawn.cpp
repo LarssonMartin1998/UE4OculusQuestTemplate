@@ -1,9 +1,13 @@
 #include "VRPawn.h"
 
+#include "Public/HeadMountedDisplayFunctionLibrary.h"
+#include "Engine/World.h"
+#include "Math/TransformNonVectorized.h"
+#include "Math/Vector.h"
+#include "Engine/EngineTypes.h"
 #include "Components/SceneComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "Public/HeadMountedDisplayFunctionLibrary.h"
 
 AVRPawn::AVRPawn()
 {
@@ -55,6 +59,21 @@ bool AVRPawn::CreateVRComponents()
 	}
 	VRCamera->SetupAttachment(VRCameraRoot);
 
+	VRHandLeftRoot = CreateDefaultSubobject<USceneComponent>(TEXT("VR Hand Left Root"));
+	if (!VRHandLeftRoot)
+	{
+		return false;
+	}
+	VRHandLeftRoot->SetupAttachment(RootComponent);
+
+	VRHandRightRoot = CreateDefaultSubobject<USceneComponent>(TEXT("VR Hand Right Root"));
+	if (!VRHandRightRoot)
+	{
+		return false;
+	}
+	VRHandRightRoot->SetupAttachment(RootComponent);
+
+
 	return true;
 }
 
@@ -79,6 +98,7 @@ bool AVRPawn::CreateDefaultComponents()
 
 void AVRPawn::SetupVR()
 {
+#ifdef IN_EDITOR
 	bool IsHMDConnected = UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected();
 	if (!IsHMDConnected)
 	{
@@ -91,6 +111,7 @@ void AVRPawn::SetupVR()
 
 		return;
 	}
+
 	// This can easily be expanded upon later if you want to support multiple platforms.
 	const FName& HMDDeviceName = UHeadMountedDisplayFunctionLibrary::GetHMDDeviceName();
 	if (HMDDeviceName != FName("OculusHMD"))
@@ -104,12 +125,39 @@ void AVRPawn::SetupVR()
 
 		return;
 	}
+#endif
 
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 
 	if (bIsSeatedVR)
 	{
 		VRCameraRoot->AddLocalOffset(FVector::UpVector * SeatedHeightOffset);
+		VRHandLeftRoot->AddLocalOffset(FVector::UpVector * SeatedHeightOffset);
+		VRHandRightRoot->AddLocalOffset(FVector::UpVector * SeatedHeightOffset);
+	}
+
+	UWorld* World = GetWorld();
+	if (World && VRHandClassLeft && VRHandClassRight)
+	{
+		FActorSpawnParameters SpawnParameters;
+		SpawnParameters.bAllowDuringConstructionScript = true;
+		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		FAttachmentTransformRules AttatchmentRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, false);
+
+		LeftHand = World->SpawnActor(VRHandClassLeft->GetDefaultObject()->GetClass(), &FTransform::Identity, SpawnParameters);
+		if (LeftHand)
+		{
+			LeftHand->SetOwner(this);
+			LeftHand->AttachToComponent(VRHandLeftRoot, AttatchmentRules);
+		}
+
+		RightHand = World->SpawnActor(VRHandClassRight->GetDefaultObject()->GetClass(), &FTransform::Identity, SpawnParameters);
+		if (RightHand)
+		{
+			RightHand->SetOwner(this);
+			RightHand->AttachToComponent(VRHandRightRoot, AttatchmentRules);
+		}
 	}
 }
 

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "VRHand.h"
 #include "VRPawn.generated.h"
 
 class USceneComponent;
@@ -41,6 +42,22 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* VRCamera;
+
+	UPROPERTY(VisibleAnywhere)
+	USceneComponent* VRHandLeftRoot;
+
+	UPROPERTY(VisibleAnywhere)
+	USceneComponent* VRHandRightRoot;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AVRHand> VRHandClassLeft;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AVRHand> VRHandClassRight;
+
+	AActor* LeftHand;
+
+	AActor* RightHand;
 
 protected:
 
