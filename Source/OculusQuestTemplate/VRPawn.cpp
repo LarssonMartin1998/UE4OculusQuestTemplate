@@ -8,10 +8,13 @@
 #include "Components/SceneComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/InputComponent.h"
 
 AVRPawn::AVRPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	bHasSetupInputComponent = false;
 
 	BaseEyeHeight = 0.0f;
 	AutoPossessAI = EAutoPossessAI::Disabled;
@@ -73,7 +76,6 @@ bool AVRPawn::CreateVRComponents()
 	}
 	VRHandRightRoot->SetupAttachment(RootComponent);
 
-
 	return true;
 }
 
@@ -82,6 +84,8 @@ void AVRPawn::BeginPlay()
 	Super::BeginPlay();
 
 	SetupVR();
+
+	SetupPlayerInputComponent(InputComponent);
 }
 
 bool AVRPawn::CreateDefaultComponents()
@@ -98,23 +102,34 @@ bool AVRPawn::CreateDefaultComponents()
 
 void AVRPawn::SetupVR()
 {
-#ifdef IN_EDITOR
-	bool IsHMDConnected = UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected();
-	if (!IsHMDConnected)
+	UWorld* World = GetWorld();
+
+	// Remove this outer if statement if you have a PCVR HMD to try PIE with.
+	if (!World->IsPlayInEditor())
 	{
-		FString ErrorMessage = TEXT("No HMD is connected! See AVRPawn::SetupVR");
-		UE_LOG(LogTemp, Error, TEXT("%s"), *ErrorMessage);
+		UE_LOG(LogTemp, Error, TEXT("Not In Editor"));
 		if (GEngine)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, ErrorMessage);
+			GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, TEXT("Not In Editor"));
 		}
 
-		return;
+		bool IsHMDConnected = UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected();
+		if (!IsHMDConnected)
+		{
+			FString ErrorMessage = TEXT("No HMD is connected! See AVRPawn::SetupVR");
+			UE_LOG(LogTemp, Error, TEXT("%s"), *ErrorMessage);
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, ErrorMessage);
+			}
+
+			return;
+		}
 	}
 
 	// This can easily be expanded upon later if you want to support multiple platforms.
 	const FName& HMDDeviceName = UHeadMountedDisplayFunctionLibrary::GetHMDDeviceName();
-	if (HMDDeviceName != FName("OculusHMD"))
+	if (HMDDeviceName != TEXT("OculusHMD"))
 	{
 		FString ErrorMessage = TEXT("Cannot find an Oculus HMD! See AVRPawn::SetupVR");
 		UE_LOG(LogTemp, Error, TEXT("%s"), *ErrorMessage);
@@ -125,7 +140,6 @@ void AVRPawn::SetupVR()
 
 		return;
 	}
-#endif
 
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
 
@@ -136,7 +150,6 @@ void AVRPawn::SetupVR()
 		VRHandRightRoot->AddLocalOffset(FVector::UpVector * SeatedHeightOffset);
 	}
 
-	UWorld* World = GetWorld();
 	if (World && VRHandClassLeft && VRHandClassRight)
 	{
 		FActorSpawnParameters SpawnParameters;
@@ -145,14 +158,14 @@ void AVRPawn::SetupVR()
 
 		FAttachmentTransformRules AttatchmentRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, false);
 
-		LeftHand = World->SpawnActor(VRHandClassLeft->GetDefaultObject()->GetClass(), &FTransform::Identity, SpawnParameters);
+		LeftHand = Cast<AVRHand>(World->SpawnActor(VRHandClassLeft->GetDefaultObject()->GetClass(), &FTransform::Identity, SpawnParameters));
 		if (LeftHand)
 		{
 			LeftHand->SetOwner(this);
 			LeftHand->AttachToComponent(VRHandLeftRoot, AttatchmentRules);
 		}
 
-		RightHand = World->SpawnActor(VRHandClassRight->GetDefaultObject()->GetClass(), &FTransform::Identity, SpawnParameters);
+		RightHand = Cast<AVRHand>(World->SpawnActor(VRHandClassRight->GetDefaultObject()->GetClass(), &FTransform::Identity, SpawnParameters));
 		if (RightHand)
 		{
 			RightHand->SetOwner(this);
@@ -168,5 +181,27 @@ void AVRPawn::Tick(float DeltaTime)
 
 void AVRPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
+	// Since LeftHand and RightHand is created on BeginPlay, we will manually call this function after. Don't want to be dependant on Unreals internal execution order.
+	if (bHasSetupInputComponent || !LeftHand || !RightHand)
+	{
+		return;
+	}
+
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	PlayerInputComponent->BindAction("Teleport_L", IE_Pressed, LeftHand, &AVRHand::OnTeleportLPressed);
+	PlayerInputComponent->BindAction("Teleport_R", IE_Pressed, RightHand, &AVRHand::OnTeleportRPressed);
+	PlayerInputComponent->BindAction("Teleport_L", IE_Released, LeftHand, &AVRHand::OnTeleportLReleased);
+	PlayerInputComponent->BindAction("Teleport_R", IE_Released, RightHand, &AVRHand::OnTeleportRReleased);
+
+	PlayerInputComponent->BindAxis("Thumb_L", LeftHand, &AVRHand::ThumbLAxis);
+	PlayerInputComponent->BindAxis("Thumb_R", RightHand, &AVRHand::ThumbRAxis);
+
+	PlayerInputComponent->BindAxis("Pointing_L", LeftHand, &AVRHand::PointingLAxis);
+	PlayerInputComponent->BindAxis("Pointing_R", RightHand, &AVRHand::PointingRAxis);
+
+	PlayerInputComponent->BindAxis("Grip_L", LeftHand, &AVRHand::GripLAxis);
+	PlayerInputComponent->BindAxis("Grip_R", RightHand, &AVRHand::GripRAxis);
+
+	bHasSetupInputComponent = true;
 }

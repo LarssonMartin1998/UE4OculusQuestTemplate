@@ -32,6 +32,10 @@ public:
 
 protected:
 
+	bool bHasSetupInputComponent;
+
+protected:
+
 	FORCEINLINE bool CreateVRComponents();
 
 	UPROPERTY(VisibleAnywhere)
@@ -55,9 +59,9 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AVRHand> VRHandClassRight;
 
-	AActor* LeftHand;
+	AVRHand* LeftHand;
 
-	AActor* RightHand;
+	AVRHand* RightHand;
 
 protected:
 
