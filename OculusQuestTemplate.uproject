@@ -13,12 +13,6 @@
 			]
 		}
 	],
-	"Plugins": [
-		{
-			"Name": "OculusAvatar",
-			"Enabled": true
-		}
-	],
 	"TargetPlatforms": [
 		"Android",
 		"WindowsNoEditor"

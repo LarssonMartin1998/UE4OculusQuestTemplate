@@ -13,6 +13,6 @@ public class OculusQuestTemplate : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 
 		// VR Dependencies
-		PrivateDependencyModuleNames.AddRange(new string[] { "HeadMountedDisplay", "OculusAvatar" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "HeadMountedDisplay" });
 	}
 }
