@@ -107,12 +107,6 @@ void AVRPawn::SetupVR()
 	// Remove this outer if statement if you have a PCVR HMD to try PIE with.
 	if (!World->IsPlayInEditor())
 	{
-		UE_LOG(LogTemp, Error, TEXT("Not In Editor"));
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, TEXT("Not In Editor"));
-		}
-
 		bool IsHMDConnected = UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected();
 		if (!IsHMDConnected)
 		{
@@ -125,20 +119,7 @@ void AVRPawn::SetupVR()
 
 			return;
 		}
-	}
 
-	// This can easily be expanded upon later if you want to support multiple platforms.
-	const FName& HMDDeviceName = UHeadMountedDisplayFunctionLibrary::GetHMDDeviceName();
-	if (HMDDeviceName != TEXT("OculusHMD"))
-	{
-		FString ErrorMessage = TEXT("Cannot find an Oculus HMD! See AVRPawn::SetupVR");
-		UE_LOG(LogTemp, Error, TEXT("%s"), *ErrorMessage);
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Red, ErrorMessage);
-		}
-
-		return;
 	}
 
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);

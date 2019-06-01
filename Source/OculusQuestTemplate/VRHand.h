@@ -2,10 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "PickUp.h"
+#include "Math/Vector.h"
 #include "VRHand.generated.h"
 
 class UMotionControllerComponent;
 class USkeletalMeshComponent;
+class UBoxComponent;
 
 UCLASS()
 class OCULUSQUESTTEMPLATE_API AVRHand : public AActor
@@ -34,6 +37,9 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* HandMesh;
 
+	UPROPERTY(VisibleAnywhere)
+	UBoxComponent* BoxCollider;
+
 public:
 	
 	UFUNCTION(BlueprintCallable)
@@ -43,7 +49,7 @@ public:
 	FORCEINLINE bool IsPointing() { return bIsPointing; }
 
 	UFUNCTION(BlueprintCallable)
-	FORCEINLINE float GetGripAxis() { return GripAxis; }
+	FORCEINLINE float GetGripAxis() { return CurrentPickUp ? CurrentPickUp->GetGripFlex() : GripAxis; }
 
 public:
 
@@ -81,5 +87,28 @@ private:
 	bool bIsPointing;
 
 	float GripAxis;
+
+public:
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE APickUp* GetCurrentPickUp() { return CurrentPickUp; }
+
+private:
+
+	UFUNCTION()
+	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	void InternalHoverSelectNewPickUp(APickUp* PickUp);
+
+	void InternalHoverDeselectClosestPickUp();
+
+	APickUp* CurrentPickUp;
+
+	APickUp* ClosestPickUp;
+
+	TArray<APickUp*> OverlappedPickUps;
 
 };
