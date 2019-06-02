@@ -8,6 +8,7 @@
 
 class UMotionControllerComponent;
 class USkeletalMeshComponent;
+class USceneComponent;
 class UBoxComponent;
 
 UCLASS()
@@ -36,6 +37,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* HandMesh;
+
+	UPROPERTY(VisibleAnywhere)
+	USceneComponent* BoxColliderAnchor;
 
 	UPROPERTY(VisibleAnywhere)
 	UBoxComponent* BoxCollider;
@@ -111,4 +115,11 @@ private:
 
 	TArray<APickUp*> OverlappedPickUps;
 
+private:
+
+	UPROPERTY(EditAnywhere)
+	FRotator SteamVRRotationOffset;
+
+	UPROPERTY(EditAnywhere)
+	FVector SteamVRLocationOffset;
 };

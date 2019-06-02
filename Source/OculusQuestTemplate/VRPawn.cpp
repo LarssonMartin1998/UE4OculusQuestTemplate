@@ -1,6 +1,7 @@
 #include "VRPawn.h"
 
 #include "Public/HeadMountedDisplayFunctionLibrary.h"
+#include "HMDHelper.h"
 #include "Engine/World.h"
 #include "Math/TransformNonVectorized.h"
 #include "Math/Vector.h"
@@ -105,10 +106,9 @@ void AVRPawn::SetupVR()
 	UWorld* World = GetWorld();
 
 	// Remove this outer if statement if you have a PCVR HMD to try PIE with.
-	if (!World->IsPlayInEditor())
+	if (World && !World->IsPlayInEditor())
 	{
-		bool IsHMDConnected = UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected();
-		if (!IsHMDConnected)
+		if (!UHMDHelper::IsHMDConnected())
 		{
 			FString ErrorMessage = TEXT("No HMD is connected! See AVRPawn::SetupVR");
 			UE_LOG(LogTemp, Error, TEXT("%s"), *ErrorMessage);
@@ -119,7 +119,6 @@ void AVRPawn::SetupVR()
 
 			return;
 		}
-
 	}
 
 	UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);

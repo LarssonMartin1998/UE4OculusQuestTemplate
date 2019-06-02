@@ -1,5 +1,7 @@
 #include "VRHand.h"
 
+#include "HMDHelper.h"
+#include "Components/SceneComponent.h"
 #include "Public/MotionControllerComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/BoxComponent.h"
@@ -27,12 +29,19 @@ bool AVRHand::CreateVRComponents()
 	}
 	HandMesh->SetupAttachment(RootComponent);
 
+	BoxColliderAnchor = CreateDefaultSubobject<USceneComponent>(TEXT("Box Collider Anchor"));
+	if (!BoxColliderAnchor)
+	{
+		return false;
+	}
+	BoxColliderAnchor->SetupAttachment(RootComponent);
+
 	BoxCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("Box Collider"));
 	if (!BoxCollider)
 	{
 		return false;
 	}
-	BoxCollider->SetupAttachment(RootComponent);
+	BoxCollider->SetupAttachment(BoxColliderAnchor);
 	BoxCollider->SetBoxExtent(FVector(100.0f, 25.0f, 25.0f));
 	BoxCollider->SetCollisionResponseToAllChannels(ECR_Overlap);
 	BoxCollider->SetCollisionObjectType(ECC_Pawn);
@@ -50,6 +59,16 @@ void AVRHand::BeginPlay()
 
 	BoxCollider->OnComponentBeginOverlap.AddDynamic(this, &AVRHand::OnOverlapBegin);
 	BoxCollider->OnComponentEndOverlap.AddDynamic(this, &AVRHand::OnOverlapEnd);
+
+	if (UHMDHelper::IsSteamVR())
+	{
+		HandMesh->AddLocalOffset(SteamVRLocationOffset);
+		HandMesh->AddLocalRotation(SteamVRRotationOffset);
+
+		FRotator ColliderRotOffset(SteamVRRotationOffset.Yaw, SteamVRRotationOffset.Pitch, SteamVRRotationOffset.Roll);
+	}
+
+	BoxColliderAnchor->SetRelativeRotation(HandMesh->GetComponentRotation());
 }
 
 void AVRHand::Tick(float DeltaTime)
@@ -149,21 +168,41 @@ void AVRHand::OnTeleportRReleased()
 void AVRHand::PointingLAxis(float Axis)
 {
 	bIsPointing = Axis > 0.5f;
+
+	if (UHMDHelper::IsSteamVR())
+	{
+		bIsPointing = !bIsPointing;
+	}
 }
 
 void AVRHand::PointingRAxis(float Axis)
 {
 	bIsPointing = Axis > 0.5f;
+
+	if (UHMDHelper::IsSteamVR())
+	{
+		bIsPointing = !bIsPointing;
+	}
 }
 
 void AVRHand::ThumbLAxis(float Axis)
 {
 	bIsThumbUp = Axis > 0.5f;
+
+	if (UHMDHelper::IsSteamVR())
+	{
+		bIsThumbUp = !bIsThumbUp;
+	}
 }
 
 void AVRHand::ThumbRAxis(float Axis)
 {
 	bIsThumbUp = Axis > 0.5f;
+
+	if (UHMDHelper::IsSteamVR())
+	{
+		bIsThumbUp = !bIsThumbUp;
+	}
 }
 
 void AVRHand::GripLAxis(float Axis)
